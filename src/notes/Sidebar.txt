@@ -1,0 +1,52 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { FaHome, FaList, FaPlusCircle, FaUsers } from "react-icons/fa";
+
+const Sidebar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="flex">
+      {/* Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="btn btn-square btn-outline m-2 sm:hidden"
+      >
+        {isOpen ? "✖" : "☰"}
+      </button>
+
+      {/* Sidebar */}
+      <div className={`bg-base-200 p-4 h-screen transition-all duration-300 ${isOpen ? "w-64" : "w-20"} sm:w-64`}>
+        <h2 className="text-xl font-bold mb-4">Dashboard</h2>
+        <ul className="menu p-2 rounded-box">
+          <li>
+            <Link to="/" className="flex items-center">
+              <FaHome className="w-6 h-6" />
+              {isOpen && <span className="ml-3">Home</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/create-ticket" className="flex items-center">
+              <FaPlusCircle className="w-6 h-6" />
+              {isOpen && <span className="ml-3">Create Ticket</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/tickets" className="flex items-center">
+              <FaList className="w-6 h-6" />
+              {isOpen && <span className="ml-3">View Tickets</span>}
+            </Link>
+          </li>
+          <li>
+            <Link to="/clients" className="flex items-center">
+              <FaUsers className="w-6 h-6" />
+              {isOpen && <span className="ml-3">Clients</span>}
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
