@@ -9,6 +9,10 @@ import Reporting from "./components/Reporting";
 import Calculations from "./components/Calculations";
 import Inventory from "./components/Inventory";
 import TimeSheets from "./components/TimeSheets";
+import AbsEsCalculator from "./components/AbsEsCalculator";
+import TimeClockCalculator from "./components/TimeClockCalculator";
+import PitDepthCalculator from "./components/PitDepthCalculator";
+
 
 
 function App() {
@@ -25,8 +29,14 @@ function App() {
               <Route path="/projectsanddigs" element={<ProjectsAndDigs />} />
               <Route path="/reporting" element={<Reporting />} />
               <Route path="/calculations" element={<Calculations />} />
+               {/* Individual calculators (sub-routes) */}
+               <Route path="/calculations/abs-es" element={<AbsEsCalculator />} />
+               <Route path="/calculations/timeclockcalculator" element={<TimeClockCalculator />} />
+               <Route path="/calculations/pitdepthcalculator" element={<PitDepthCalculator />} />
+             
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/timesheets" element={<TimeSheets />} />
+              
 
             </Routes>
           </main>

@@ -1,0 +1,20 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const Calculations = () => {
+  return (
+    <div className="card bg-primary text-primary-content w-96">
+      <div className="card-body">
+        <h2 className="card-title">ABS + ES Calculator</h2>
+        <p>Use this to add RGW+ to both ABS and ES values.</p>
+        <div className="card-actions justify-end">
+          <Link to="/calculations/abs-es" className="btn">
+            Open Calculator
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Calculations;
