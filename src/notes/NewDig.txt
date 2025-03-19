@@ -1,0 +1,233 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import supabase from "../supabase";
+
+const isDevelopment = import.meta.env.MODE === "development"; // Check if in dev mode
+
+const NewDig = () => {
+  const navigate = useNavigate();
+  const [userId, setUserId] = useState(null);
+  const [projectName, setProjectName] = useState("");
+  const [digNumber, setDigNumber] = useState("");
+  const [location, setLocation] = useState("");
+  const [gpsLatitude, setGpsLatitude] = useState("");
+  const [gpsLongitude, setGpsLongitude] = useState("");
+  const [fid, setFid] = useState("");
+  const [jointNumber, setJointNumber] = useState("");
+  const [wallThickness, setWallThickness] = useState("");
+  const [od, setOd] = useState("");
+  const [anomalyType, setAnomalyType] = useState("");
+  const [rgwPlus, setRgwPlus] = useState("");
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [depth, setDepth] = useState("");
+  const [absEsn, setAbsEsn] = useState("");
+  const [depthPercentage, setDepthPercentage] = useState("");
+  const [repairType, setRepairType] = useState("");
+  const [repairStart, setRepairStart] = useState("");
+  const [repairEnd, setRepairEnd] = useState("");
+  const [repairDate, setRepairDate] = useState("");
+  const [error, setError] = useState("");
+
+  // 🔹 Fetch the authenticated user's ID (or use NULL in dev mode)
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (isDevelopment) {
+        setUserId(null); // ✅ Allow NULL in development mode
+      } else {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error("Error fetching user:", error);
+        } else {
+          setUserId(data.user?.id);
+        }
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  // 🔹 Save new dig to Supabase
+  const handleCreateDig = async () => {
+    if (!projectName || !digNumber) {
+      setError("Project Name and Dig Number are required.");
+      return;
+    }
+
+    const insertData = {
+      project_name: projectName,
+      dig_number: digNumber,
+      location: location || null,
+      gps_latitude: gpsLatitude ? parseFloat(gpsLatitude) : null,
+      gps_longitude: gpsLongitude ? parseFloat(gpsLongitude) : null,
+      fid: fid || null,
+      joint_number: jointNumber || null,
+      wall_thickness: wallThickness ? parseFloat(wallThickness) : null,
+      od: od ? parseFloat(od) : null,
+      anomaly_type: anomalyType || null,
+      rgw_plus: rgwPlus ? parseFloat(rgwPlus) : null,
+      length: length ? parseFloat(length) : null,
+      width: width ? parseFloat(width) : null,
+      depth: depth ? parseFloat(depth) : null,
+      abs_esn: absEsn ? parseFloat(absEsn) : null,
+      depth_percentage: depthPercentage ? parseFloat(depthPercentage) : null,
+      repair_type: repairType || null,
+      repair_start: repairStart ? parseFloat(repairStart) : null,
+      repair_end: repairEnd ? parseFloat(repairEnd) : null,
+      repair_date: repairDate || null,
+      created_by_user: userId, // ✅ NULL in development mode, real UUID in production
+    };
+
+    const { error } = await supabase.from("digs").insert([insertData]);
+
+    if (error) {
+      setError(`Error creating dig: ${error.message}`);
+    } else {
+      navigate("/reporting"); // Redirect to Reporting Page
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto p-6 bg-white rounded shadow">
+      <h1 className="text-2xl font-bold mb-4">Create New Dig</h1>
+      {error && <p className="text-red-500">{error}</p>}
+
+      <div className="grid grid-cols-1 gap-4">
+        <input
+          type="text"
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Project Name"
+        />
+        <input
+          type="text"
+          value={digNumber}
+          onChange={(e) => setDigNumber(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Dig Number"
+        />
+        <input
+          type="text"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Location"
+        />
+        <input
+          type="text"
+          value={fid}
+          onChange={(e) => setFid(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="FID"
+        />
+        <input
+          type="text"
+          value={jointNumber}
+          onChange={(e) => setJointNumber(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Joint Number"
+        />
+        <input
+          type="number"
+          value={wallThickness}
+          onChange={(e) => setWallThickness(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Wall Thickness"
+        />
+        <input
+          type="number"
+          value={od}
+          onChange={(e) => setOd(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Outside Diameter (OD)"
+        />
+        <input
+          type="text"
+          value={anomalyType}
+          onChange={(e) => setAnomalyType(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Anomaly Type"
+        />
+        <input
+          type="number"
+          value={rgwPlus}
+          onChange={(e) => setRgwPlus(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="RGW (+)"
+        />
+        <input
+          type="number"
+          value={length}
+          onChange={(e) => setLength(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Anomaly Length"
+        />
+        <input
+          type="number"
+          value={width}
+          onChange={(e) => setWidth(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Anomaly Width"
+        />
+        <input
+          type="number"
+          value={depth}
+          onChange={(e) => setDepth(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Anomaly Depth"
+        />
+        <input
+          type="number"
+          value={absEsn}
+          onChange={(e) => setAbsEsn(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="ABS ESN"
+        />
+        <input
+          type="number"
+          value={depthPercentage}
+          onChange={(e) => setDepthPercentage(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Depth Percentage"
+        />
+        <input
+          type="text"
+          value={repairType}
+          onChange={(e) => setRepairType(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Repair Type"
+        />
+        <input
+          type="number"
+          value={repairStart}
+          onChange={(e) => setRepairStart(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Repair Start Footage"
+        />
+        <input
+          type="number"
+          value={repairEnd}
+          onChange={(e) => setRepairEnd(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="Repair End Footage"
+        />
+        <input
+          type="date"
+          value={repairDate}
+          onChange={(e) => setRepairDate(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+
+      <button
+        onClick={handleCreateDig}
+        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 mt-4"
+      >
+        Save Dig
+      </button>
+    </div>
+  );
+};
+
+export default NewDig;

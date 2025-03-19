@@ -13,10 +13,6 @@ import Reporting from "./components/Reporting";
 import Calculations from "./components/Calculations";
 import Inventory from "./components/Inventory";
 import TimeSheets from "./components/TimeSheets";
-import NewDig from "./components/NewDig";
-import CompanyDirectory from "./components/CompanyDirectory";
-import DigDetails from "./components/DigDetails";
-import EditDig from "./components/EditDig";
 
 // Calculators
 import AbsEsCalculator from "./components/AbsEsCalculator";
@@ -61,14 +57,7 @@ function App() {
               <Route path="/profile" element={session ? <Profile /> : <Navigate to="/login" />} />
               <Route path="/projectsanddigs" element={session ? <ProjectsAndDigs /> : <Navigate to="/login" />} />
               <Route path="/reporting" element={session ? <Reporting /> : <Navigate to="/login" />} />
-              
               <Route path="/calculations" element={session ? <Calculations /> : <Navigate to="/login" />} />
-              <Route path="/newdig" element={session ? <NewDig /> : <Navigate to="/login" />} />
-              <Route path="/companydirectory" element={session ? <CompanyDirectory /> : <Navigate to="/login" />} />
-              <Route path="/reporting/dig/:id" element={<DigDetails />} /> {/* Add this route */}
-              <Route path="/reporting/edit/:id" element={<EditDig />} />
-
-              
               
               {/* Individual Calculators */}
               <Route path="/calculations/abs-es" element={session ? <AbsEsCalculator /> : <Navigate to="/login" />} />

@@ -1,0 +1,204 @@
+import { useEffect, useState } from "react";
+import supabase from "../supabase";
+import { FaTrash, FaEdit } from "react-icons/fa";
+
+const CompanyDirectory = () => {
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({
+    id: null,
+    name: "",
+    position: "",
+    email: "",
+    phone: "",
+    department: "",
+  });
+
+  // Fetch employees from Supabase
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  async function fetchEmployees() {
+    const { data, error } = await supabase.from("employees").select("*");
+    if (error) console.error("Error fetching employees:", error);
+    else setEmployees(data);
+    setLoading(false);
+  }
+
+  // Handle form input changes
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Add or update an employee
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (form.id) {
+      // Update employee
+      const { data, error } = await supabase
+        .from("employees")
+        .update({
+          name: form.name,
+          position: form.position,
+          email: form.email,
+          phone: form.phone,
+          department: form.department,
+        })
+        .eq("id", form.id)
+        .select(); // Add .select() to get the updated row(s)
+
+      if (error) {
+        console.error("Error updating employee:", error);
+      } else if (data && data.length > 0) {
+        // Update the employees state with the updated data
+        setEmployees(employees.map((emp) => (emp.id === form.id ? data[0] : emp)));
+      }
+    } else {
+      // Add new employee
+      const { data, error } = await supabase
+        .from("employees")
+        .insert([
+          {
+            name: form.name,
+            position: form.position,
+            email: form.email,
+            phone: form.phone,
+            department: form.department,
+          },
+        ])
+        .select(); // Add .select() to get the inserted row(s)
+
+      if (error) {
+        console.error("Error adding employee:", error);
+      } else if (data && data.length > 0) {
+        // Update the employees state with the new data
+        setEmployees([...employees, data[0]]);
+      }
+    }
+
+    resetForm();
+    fetchEmployees();
+  }
+
+  // Delete an employee
+  async function handleDelete(id) {
+    const { error } = await supabase.from("employees").delete().eq("id", id);
+    if (error) console.error("Error deleting employee:", error);
+    fetchEmployees();
+  }
+
+  // Load employee into form for editing
+  function handleEdit(employee) {
+    setForm(employee);
+  }
+
+  // Reset the form
+  function resetForm() {
+    setForm({ id: null, name: "", position: "", email: "", phone: "", department: "" });
+  }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">Company Directory</h1>
+
+      {/* Employee Form */}
+      <form onSubmit={handleSubmit} className="mb-6 bg-base-200 p-4 rounded-lg">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            name="name"
+            placeholder="Name"
+            className="input input-bordered w-full"
+            value={form.name}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="text"
+            name="position"
+            placeholder="Position"
+            className="input input-bordered w-full"
+            value={form.position}
+            onChange={handleChange}
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            className="input input-bordered w-full"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone"
+            className="input input-bordered w-full"
+            value={form.phone}
+            onChange={handleChange}
+          />
+          <input
+            type="text"
+            name="department"
+            placeholder="Department"
+            className="input input-bordered w-full"
+            value={form.department}
+            onChange={handleChange}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary mt-4">
+          {form.id ? "Update Employee" : "Add Employee"}
+        </button>
+        {form.id && (
+          <button onClick={resetForm} type="button" className="btn btn-outline ml-2">
+            Cancel
+          </button>
+        )}
+      </form>
+
+      {/* Employee Table */}
+      {loading ? (
+        <p>Loading employees...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Department</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp.id}>
+                  <td>{emp.name}</td>
+                  <td>{emp.position || "N/A"}</td>
+                  <td>{emp.email}</td>
+                  <td>{emp.phone || "N/A"}</td>
+                  <td>{emp.department || "N/A"}</td>
+                  <td>
+                    <button className="btn btn-sm btn-outline mr-2" onClick={() => handleEdit(emp)}>
+                      <FaEdit />
+                    </button>
+                    <button className="btn btn-sm btn-error" onClick={() => handleDelete(emp.id)}>
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CompanyDirectory;

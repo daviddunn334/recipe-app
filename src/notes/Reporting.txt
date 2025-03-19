@@ -1,0 +1,88 @@
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import supabase from "../supabase";
+import { FaTrash, FaEdit } from "react-icons/fa";
+
+const Reporting = () => {
+  const [digs, setDigs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all digs from Supabase
+  useEffect(() => {
+    const fetchDigs = async () => {
+      const { data, error } = await supabase
+        .from("digs")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching digs:", error);
+      } else {
+        setDigs(data);
+      }
+      setLoading(false);
+    };
+
+    fetchDigs();
+  }, []);
+
+  // Delete a dig from Supabase
+  const handleDeleteDig = async (id) => {
+    if (window.confirm("Are you sure you want to delete this dig?")) {
+      setLoading(true);
+      const { error } = await supabase.from("digs").delete().eq("id", id);
+
+      if (error) {
+        console.error("Error deleting dig:", error);
+      } else {
+        setDigs(digs.filter((dig) => dig.id !== id));
+      }
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold text-primary mb-4">Saved Digs</h1>
+
+      {loading ? (
+        <p className="text-gray-600">Loading...</p>
+      ) : digs.length === 0 ? (
+        <p className="text-gray-600">No digs available.</p>
+      ) : (
+        <ul className="space-y-4">
+          {digs.map((dig) => (
+            <li
+              key={dig.id}
+              className="p-4 bg-base-100 shadow-md rounded flex justify-between items-center"
+            >
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {dig.project_name} - Dig #{dig.dig_number}
+                </h2>
+                <p className="text-gray-600">Location: {dig.location || "N/A"}</p>
+                <p className="text-gray-600">
+                  Date: {new Date(dig.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Link to={`/reporting/edit/${dig.id}`} className="btn btn-primary btn-sm">
+                  <FaEdit /> Edit
+                </Link>
+                <button
+                  onClick={() => handleDeleteDig(dig.id)}
+                  className="btn btn-error btn-sm"
+                  title="Delete Dig"
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+export default Reporting;
