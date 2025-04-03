@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import supabase from "./supabase";
 
@@ -23,64 +23,44 @@ import AbsEsCalculator from "./components/AbsEsCalculator";
 import TimeClockCalculator from "./components/TimeClockCalculator";
 import PitDepthCalculator from "./components/PitDepthCalculator";
 
-// Auth Pages
-import Login from "./components/Login";
-import Signup from "./components/Signup";
-
-const isDevelopment = import.meta.env.MODE === "development"; // Check if in development mode
-
 function App() {
-  const [session, setSession] = useState(isDevelopment ? { user: { id: "dev-user" } } : null);
+  // Always set session as truthy to bypass authentication
+  const [session, setSession] = useState({ user: { id: "bypass-auth" } });
 
   useEffect(() => {
-    if (!isDevelopment) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-      });
-
-      supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-      });
-    }
+    // Optionally, if you still want to handle auth state changes (for future use),
+    // you can keep this, but it won't affect the bypassed auth.
+    supabase.auth.onAuthStateChange((_event, session) => {
+      //setSession(session);
+    });
   }, []);
 
   return (
     <Router>
-      {session && <TopNav />}
+      <TopNav />
       <div className="flex flex-col min-h-screen">
         <div className="flex flex-1">
-          {session && <Sidebar />}
+          <Sidebar />
           <main className="flex-1 p-4">
             <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-
-              {/* Protected Routes (Require Authentication) */}
-              <Route path="/" element={session ? <Dashboard /> : <Navigate to="/login" />} />
-              <Route path="/profile" element={session ? <Profile /> : <Navigate to="/login" />} />
-              <Route path="/projectsanddigs" element={session ? <ProjectsAndDigs /> : <Navigate to="/login" />} />
-              <Route path="/reporting" element={session ? <Reporting /> : <Navigate to="/login" />} />
-              
-              <Route path="/calculations" element={session ? <Calculations /> : <Navigate to="/login" />} />
-              <Route path="/newdig" element={session ? <NewDig /> : <Navigate to="/login" />} />
-              <Route path="/companydirectory" element={session ? <CompanyDirectory /> : <Navigate to="/login" />} />
-              <Route path="/reporting/dig/:id" element={<DigDetails />} /> {/* Add this route */}
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/projectsanddigs" element={<ProjectsAndDigs />} />
+              <Route path="/reporting" element={<Reporting />} />
+              <Route path="/calculations" element={<Calculations />} />
+              <Route path="/newdig" element={<NewDig />} />
+              <Route path="/companydirectory" element={<CompanyDirectory />} />
+              <Route path="/reporting/dig/:id" element={<DigDetails />} />
               <Route path="/reporting/edit/:id" element={<EditDig />} />
-
-              
-              
-              {/* Individual Calculators */}
-              <Route path="/calculations/abs-es" element={session ? <AbsEsCalculator /> : <Navigate to="/login" />} />
-              <Route path="/calculations/timeclockcalculator" element={session ? <TimeClockCalculator /> : <Navigate to="/login" />} />
-              <Route path="/calculations/pitdepthcalculator" element={session ? <PitDepthCalculator /> : <Navigate to="/login" />} />
-              
-              <Route path="/inventory" element={session ? <Inventory /> : <Navigate to="/login" />} />
-              <Route path="/timesheets" element={session ? <TimeSheets /> : <Navigate to="/login" />} />
+              <Route path="/calculations/abs-es" element={<AbsEsCalculator />} />
+              <Route path="/calculations/timeclockcalculator" element={<TimeClockCalculator />} />
+              <Route path="/calculations/pitdepthcalculator" element={<PitDepthCalculator />} />
+              <Route path="/inventory" element={<Inventory />} />
+              <Route path="/timesheets" element={<TimeSheets />} />
             </Routes>
           </main>
         </div>
-        {session && <Footer />}
+        <Footer />
       </div>
     </Router>
   );

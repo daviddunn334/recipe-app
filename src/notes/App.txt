@@ -13,6 +13,10 @@ import Reporting from "./components/Reporting";
 import Calculations from "./components/Calculations";
 import Inventory from "./components/Inventory";
 import TimeSheets from "./components/TimeSheets";
+import NewDig from "./components/NewDig";
+import CompanyDirectory from "./components/CompanyDirectory";
+import DigDetails from "./components/DigDetails";
+import EditDig from "./components/EditDig";
 
 // Calculators
 import AbsEsCalculator from "./components/AbsEsCalculator";
@@ -23,18 +27,21 @@ import PitDepthCalculator from "./components/PitDepthCalculator";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 
+const isDevelopment = import.meta.env.MODE === "development"; // Check if in development mode
+
 function App() {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(isDevelopment ? { user: { id: "dev-user" } } : null);
 
-  // Check if user is logged in
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    if (!isDevelopment) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+      });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
+    }
   }, []);
 
   return (
@@ -54,7 +61,14 @@ function App() {
               <Route path="/profile" element={session ? <Profile /> : <Navigate to="/login" />} />
               <Route path="/projectsanddigs" element={session ? <ProjectsAndDigs /> : <Navigate to="/login" />} />
               <Route path="/reporting" element={session ? <Reporting /> : <Navigate to="/login" />} />
+              
               <Route path="/calculations" element={session ? <Calculations /> : <Navigate to="/login" />} />
+              <Route path="/newdig" element={session ? <NewDig /> : <Navigate to="/login" />} />
+              <Route path="/companydirectory" element={session ? <CompanyDirectory /> : <Navigate to="/login" />} />
+              <Route path="/reporting/dig/:id" element={<DigDetails />} /> {/* Add this route */}
+              <Route path="/reporting/edit/:id" element={<EditDig />} />
+
+              
               
               {/* Individual Calculators */}
               <Route path="/calculations/abs-es" element={session ? <AbsEsCalculator /> : <Navigate to="/login" />} />

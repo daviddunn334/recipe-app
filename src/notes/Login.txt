@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import supabase from "../supabase";
 
 const Login = () => {
@@ -12,7 +12,7 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { user, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -49,18 +49,12 @@ const Login = () => {
             required
           />
         </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-        >
+        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
           Login
         </button>
       </form>
       <p className="mt-4 text-gray-600">
-        Don't have an account?{" "}
-        <Link to="/signup" className="text-blue-500">
-          Sign Up
-        </Link>
+        Don't have an account? <a href="/signup" className="text-blue-500">Sign Up</a>
       </p>
     </div>
   );
