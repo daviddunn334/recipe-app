@@ -53,7 +53,9 @@ const CompanyDirectory = () => {
       if (error) {
         console.error("Error updating employee:", error);
       } else if (data && data.length > 0) {
-        setEmployees(employees.map((emp) => (emp.id === form.id ? data[0] : emp)));
+        setEmployees(
+          employees.map((emp) => (emp.id === form.id ? data[0] : emp))
+        );
       }
     } else {
       // Add new employee
@@ -92,12 +94,21 @@ const CompanyDirectory = () => {
   function handleEdit(employee) {
     setForm(employee);
     // Scroll to form
-    document.getElementById("employee-form").scrollIntoView({ behavior: "smooth" });
+    document
+      .getElementById("employee-form")
+      .scrollIntoView({ behavior: "smooth" });
   }
 
   // Reset the form
   function resetForm() {
-    setForm({ id: null, name: "", position: "", email: "", phone: "", department: "" });
+    setForm({
+      id: null,
+      name: "",
+      position: "",
+      email: "",
+      phone: "",
+      department: "",
+    });
   }
 
   // Filter employees based on search term
@@ -201,10 +212,7 @@ const CompanyDirectory = () => {
               </div>
             </div>
             <div className="mt-4 flex items-center">
-              <button
-                type="submit"
-                className="btn btn-primary"
-              >
+              <button type="submit" className="btn btn-primary">
                 <FaSave className="mr-2" />
                 {form.id ? "Update Employee" : "Add Employee"}
               </button>
@@ -224,7 +232,9 @@ const CompanyDirectory = () => {
         {/* Search and Employee Table */}
         <div className="card-body">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold mb-3 md:mb-0">Employee List</h2>
+            <h2 className="text-xl font-semibold mb-3 md:mb-0">
+              Employee List
+            </h2>
             <div className="join w-full md:w-64">
               <div className="join-item btn btn-neutral">
                 <FaSearch />

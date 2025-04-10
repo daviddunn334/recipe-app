@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import supabase from "./supabase";
+import { initializeCompanies } from "./utils/initializeCompanies";
 
 import Sidebar from "./components/Sidebar";
 import TopNav from "./components/TopNav";
@@ -17,6 +18,7 @@ import NewDig from "./components/NewDig";
 import CompanyDirectory from "./components/CompanyDirectory";
 import DigDetails from "./components/DigDetails";
 import EditDig from "./components/EditDig";
+import CompanyDetails from "./components/CompanyDetails";
 
 // Calculators
 import AbsEsCalculator from "./components/AbsEsCalculator";
@@ -28,6 +30,9 @@ function App() {
   const [session, setSession] = useState({ user: { id: "bypass-auth" } });
 
   useEffect(() => {
+    // Initialize companies data
+    initializeCompanies().catch(console.error);
+
     // Optionally, if you still want to handle auth state changes (for future use),
     // you can keep this, but it won't affect the bypassed auth.
     supabase.auth.onAuthStateChange((_event, session) => {
@@ -52,11 +57,21 @@ function App() {
               <Route path="/companydirectory" element={<CompanyDirectory />} />
               <Route path="/reporting/dig/:id" element={<DigDetails />} />
               <Route path="/reporting/edit/:id" element={<EditDig />} />
-              <Route path="/calculations/abs-es" element={<AbsEsCalculator />} />
-              <Route path="/calculations/timeclockcalculator" element={<TimeClockCalculator />} />
-              <Route path="/calculations/pitdepthcalculator" element={<PitDepthCalculator />} />
+              <Route
+                path="/calculations/abs-es"
+                element={<AbsEsCalculator />}
+              />
+              <Route
+                path="/calculations/timeclockcalculator"
+                element={<TimeClockCalculator />}
+              />
+              <Route
+                path="/calculations/pitdepthcalculator"
+                element={<PitDepthCalculator />}
+              />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/timesheets" element={<TimeSheets />} />
+              <Route path="/company/:companyId" element={<CompanyDetails />} />
             </Routes>
           </main>
         </div>
