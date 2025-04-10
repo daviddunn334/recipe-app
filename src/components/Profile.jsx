@@ -147,7 +147,7 @@ const ProfilePage = () => {
               <tbody>
                 {profile.certifications.map((cert) => (
                   <tr key={cert.id}>
-                    <td>{cert.name}</td>
+                    <td>🏆 {cert.name}</td>
                     <td>{new Date(cert.expiration).toLocaleDateString()}</td>
                     <td>
                       {cert.document ? (
