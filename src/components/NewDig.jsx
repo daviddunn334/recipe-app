@@ -367,30 +367,34 @@ const NewDig = () => {
 
   return (
     <div className="card card-compact w-full max-w-4xl mx-auto shadow-xl bg-base-100">
-      <div className="card-body">
-        <h1 className="card-title text-2xl">Create New Dig</h1>
+      <div className="card-body p-2 sm:p-4">
+        <h1 className="card-title text-xl sm:text-2xl mb-2 sm:mb-4">
+          Create New Dig
+        </h1>
 
         {error && (
-          <div className="alert alert-error">
+          <div className="alert alert-error text-sm sm:text-base">
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="alert alert-success">
+          <div className="alert alert-success text-sm sm:text-base">
             <span>{success}</span>
           </div>
         )}
 
-        <form className="space-y-6">
+        <form className="space-y-3 sm:space-y-6">
           {/* Basic Information */}
           <div className="card bg-base-200">
-            <div className="card-body">
-              <h2 className="card-title text-lg">Basic Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="card-body p-2 sm:p-4">
+              <h2 className="card-title text-base sm:text-lg mb-2">
+                Basic Information
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
+                  <label className="label py-1">
+                    <span className="label-text text-sm sm:text-base">
                       Project Name*
                     </span>
                   </label>
@@ -399,36 +403,40 @@ const NewDig = () => {
                     name="project_name"
                     value={formData.project_name}
                     onChange={handleChange}
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full text-sm sm:text-base"
                     placeholder="Enter project name"
                     required
                   />
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Dig Number*</span>
+                  <label className="label py-1">
+                    <span className="label-text text-sm sm:text-base">
+                      Dig Number*
+                    </span>
                   </label>
                   <input
                     type="text"
                     name="dig_number"
                     value={formData.dig_number}
                     onChange={handleChange}
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full text-sm sm:text-base"
                     placeholder="Enter dig number"
                     required
                   />
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Client</span>
+                  <label className="label py-1">
+                    <span className="label-text text-sm sm:text-base">
+                      Client
+                    </span>
                   </label>
                   <select
                     name="client_id"
                     value={formData.client_id}
                     onChange={handleChange}
-                    className="select select-bordered w-full"
+                    className="select select-bordered w-full text-sm sm:text-base"
                   >
                     <option value="">Select a client</option>
                     {clients.map((client) => (
@@ -440,15 +448,15 @@ const NewDig = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">FID</span>
+                  <label className="label py-1">
+                    <span className="label-text text-sm sm:text-base">FID</span>
                   </label>
                   <input
                     type="text"
                     name="fid"
                     value={formData.fid}
                     onChange={handleChange}
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full text-sm sm:text-base"
                     placeholder="Enter FID"
                   />
                 </div>
@@ -458,12 +466,14 @@ const NewDig = () => {
 
           {/* Location Information */}
           <div className="card bg-base-200">
-            <div className="card-body">
-              <h2 className="card-title text-lg">Location Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="card-body p-2 sm:p-4">
+              <h2 className="card-title text-base sm:text-lg mb-2">
+                Location Information
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
+                  <label className="label py-1">
+                    <span className="label-text text-sm sm:text-base">
                       Location Description
                     </span>
                   </label>
@@ -472,14 +482,14 @@ const NewDig = () => {
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full text-sm sm:text-base"
                     placeholder="Describe the location"
                   />
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
+                  <label className="label py-1">
+                    <span className="label-text text-sm sm:text-base">
                       Section/Township/Range
                     </span>
                   </label>
@@ -488,433 +498,59 @@ const NewDig = () => {
                     name="section_township_range"
                     value={formData.section_township_range}
                     onChange={handleChange}
-                    className="input input-bordered w-full"
+                    className="input input-bordered w-full text-sm sm:text-base"
                     placeholder="Enter STR information"
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  <div className="form-control flex-1">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        GPS Latitude
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      name="gps_latitude"
-                      value={formData.gps_latitude}
-                      onChange={handleChange}
-                      className="input input-bordered w-full"
-                      placeholder="Decimal degrees"
-                      step="any"
-                    />
-                  </div>
-
-                  <div className="form-control flex-1">
-                    <label className="label">
-                      <span className="label-text font-medium">
-                        GPS Longitude
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      name="gps_longitude"
-                      value={formData.gps_longitude}
-                      onChange={handleChange}
-                      className="input input-bordered w-full"
-                      placeholder="Decimal degrees"
-                      step="any"
-                    />
-                  </div>
-
-                  <div className="self-end mb-2">
-                    <button
-                      type="button"
-                      onClick={getCurrentLocation}
-                      className="btn btn-primary h-12"
-                      title="Get Current Location"
-                    >
-                      <FaMapMarkerAlt />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      GPS Accuracy (meters)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="gps_accuracy"
-                    value={formData.gps_accuracy}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Accuracy in meters"
-                    step="any"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pipe & Anomaly Information */}
-          <div className="card bg-base-200">
-            <div className="card-body">
-              <h2 className="card-title text-lg">Pipe & Anomaly Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Joint Number</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="joint_number"
-                    value={formData.joint_number}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter joint number"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Wall Thickness (in)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="wall_thickness"
-                    value={formData.wall_thickness}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter wall thickness"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Outside Diameter (in)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="od"
-                    value={formData.od}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter OD"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Anomaly Type</span>
-                  </label>
-                  <select
-                    name="anomaly_type"
-                    value={formData.anomaly_type}
-                    onChange={handleChange}
-                    className="select select-bordered w-full"
-                  >
-                    <option value="">Select anomaly type</option>
-                    <option value="Metal Loss">Metal Loss</option>
-                    <option value="Dent">Dent</option>
-                    <option value="Crack">Crack</option>
-                    <option value="Gouge">Gouge</option>
-                    <option value="Wrinkle">Wrinkle</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">RGW+ (in)</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="rgw_plus"
-                    value={formData.rgw_plus}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter RGW+"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Length (in)</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="length"
-                    value={formData.length}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter length"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Width (in)</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="width"
-                    value={formData.width}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter width"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Depth (in)</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="depth"
-                    value={formData.depth}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter depth"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">ABS ESN</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="abs_esn"
-                    value={formData.abs_esn}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter ABS ESN"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Depth Percentage (%)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="depth_percentage"
-                    value={formData.depth_percentage}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter depth percentage"
-                    step="any"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Repair Information */}
-          <div className="card bg-base-200">
-            <div className="card-body">
-              <h2 className="card-title text-lg">Repair Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Repair Type</span>
-                  </label>
-                  <select
-                    name="repair_type"
-                    value={formData.repair_type}
-                    onChange={handleChange}
-                    className="select select-bordered w-full"
-                  >
-                    <option value="">Select repair type</option>
-                    <option value="Sleeve">Sleeve</option>
-                    <option value="Cut Out">Cut Out</option>
-                    <option value="Composite">Composite</option>
-                    <option value="Grind">Grind</option>
-                    <option value="Weld">Weld</option>
-                    <option value="None">None</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">Repair Date</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="repair_date"
-                    value={formData.repair_date}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Repair Start (o'clock)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="repair_start"
-                    value={formData.repair_start}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter repair start position"
-                    step="any"
-                  />
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-medium">
-                      Repair End (o'clock)
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    name="repair_end"
-                    value={formData.repair_end}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    placeholder="Enter repair end position"
-                    step="any"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium mb-2">Testing Methods</h3>
-                  <div className="space-y-2">
-                    <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-2">
-                        <input
-                          type="checkbox"
-                          name="material_verification"
-                          checked={formData.material_verification}
-                          onChange={handleChange}
-                          className="checkbox checkbox-primary"
-                        />
-                        <span className="label-text">
-                          Material Verification
+                <div className="col-span-1 sm:col-span-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="form-control flex-1">
+                      <label className="label py-1">
+                        <span className="label-text text-sm sm:text-base">
+                          GPS Latitude
                         </span>
                       </label>
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-2">
-                        <input
-                          type="checkbox"
-                          name="carbon_equivalency"
-                          checked={formData.carbon_equivalency}
-                          onChange={handleChange}
-                          className="checkbox checkbox-primary"
-                        />
-                        <span className="label-text">Carbon Equivalency</span>
-                      </label>
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-2">
-                        <input
-                          type="checkbox"
-                          name="prci_4c_method"
-                          checked={formData.prci_4c_method}
-                          onChange={handleChange}
-                          className="checkbox checkbox-primary"
-                        />
-                        <span className="label-text">PRCI 4C Method</span>
-                      </label>
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label cursor-pointer justify-start gap-2">
-                        <input
-                          type="checkbox"
-                          name="frontics"
-                          checked={formData.frontics}
-                          onChange={handleChange}
-                          className="checkbox checkbox-primary"
-                        />
-                        <span className="label-text">Frontics</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Timeline</h3>
-                  <div className="space-y-3">
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text">Start Excavation</span>
-                      </label>
                       <input
-                        type="datetime-local"
-                        name="start_excavation"
-                        value={formData.start_excavation}
+                        type="number"
+                        name="gps_latitude"
+                        value={formData.gps_latitude}
                         onChange={handleChange}
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
+                        placeholder="Decimal degrees"
+                        step="any"
                       />
                     </div>
 
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text">Start Coating</span>
+                    <div className="form-control flex-1">
+                      <label className="label py-1">
+                        <span className="label-text text-sm sm:text-base">
+                          GPS Longitude
+                        </span>
                       </label>
                       <input
-                        type="datetime-local"
-                        name="start_coating"
-                        value={formData.start_coating}
+                        type="number"
+                        name="gps_longitude"
+                        value={formData.gps_longitude}
                         onChange={handleChange}
-                        className="input input-bordered w-full"
+                        className="input input-bordered w-full text-sm sm:text-base"
+                        placeholder="Decimal degrees"
+                        step="any"
                       />
                     </div>
 
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text">End Coating</span>
-                      </label>
-                      <input
-                        type="datetime-local"
-                        name="end_coating"
-                        value={formData.end_coating}
-                        onChange={handleChange}
-                        className="input input-bordered w-full"
-                      />
-                    </div>
-
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text">End Excavation</span>
-                      </label>
-                      <input
-                        type="datetime-local"
-                        name="end_excavation"
-                        value={formData.end_excavation}
-                        onChange={handleChange}
-                        className="input input-bordered w-full"
-                      />
+                    <div className="self-end mb-2">
+                      <button
+                        type="button"
+                        onClick={getCurrentLocation}
+                        className="btn btn-primary h-12 w-12 sm:w-auto"
+                        title="Get Current Location"
+                      >
+                        <FaMapMarkerAlt className="text-lg" />
+                        <span className="hidden sm:inline ml-2">
+                          Get Location
+                        </span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -924,44 +560,48 @@ const NewDig = () => {
 
           {/* Photo Upload Section */}
           <div className="card bg-base-200">
-            <div className="card-body">
-              <h2 className="card-title text-lg">Photos</h2>
+            <div className="card-body p-2 sm:p-4">
+              <h2 className="card-title text-base sm:text-lg mb-2">Photos</h2>
 
               {/* Photo Upload Button */}
               <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-medium">Upload Photos</span>
+                <label className="label py-1">
+                  <span className="label-text text-sm sm:text-base">
+                    Upload Photos
+                  </span>
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handleFileUpload}
-                  className="file-input file-input-bordered w-full"
+                  className="file-input file-input-bordered w-full text-sm sm:text-base"
                   disabled={uploading}
                 />
                 {uploading && (
                   <div className="mt-2">
                     <span className="loading loading-spinner loading-sm"></span>
-                    <span className="ml-2">Uploading...</span>
+                    <span className="ml-2 text-sm sm:text-base">
+                      Uploading...
+                    </span>
                   </div>
                 )}
               </div>
 
               {/* Photo Preview Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 mt-4">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative group">
                     <img
                       src={photo.url}
                       alt={`Dig photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-24 sm:h-32 object-cover rounded-lg"
                     />
                     <button
                       onClick={() => handleDeletePhoto(photo.path)}
-                      className="absolute top-2 right-2 btn btn-sm btn-circle btn-error opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 sm:top-2 sm:right-2 btn btn-sm btn-circle btn-error opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <FaTrash />
+                      <FaTrash className="text-xs sm:text-sm" />
                     </button>
                   </div>
                 ))}
@@ -970,11 +610,11 @@ const NewDig = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4">
             <button
               type="button"
               onClick={handleCancel}
-              className="btn btn-outline"
+              className="btn btn-outline w-full sm:w-auto"
             >
               <FaTimes className="mr-2" /> Cancel
             </button>
@@ -983,7 +623,9 @@ const NewDig = () => {
               type="button"
               onClick={handleCreateDig}
               disabled={loading}
-              className={`btn btn-primary ${loading ? "loading" : ""}`}
+              className={`btn btn-primary w-full sm:w-auto ${
+                loading ? "loading" : ""
+              }`}
             >
               <FaSave className="mr-2" /> {loading ? "Saving..." : "Save Dig"}
             </button>
