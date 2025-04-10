@@ -9,7 +9,8 @@ import {
   FaBoxes, 
   FaClock, 
   FaIdBadge,
-  FaTimes
+  FaTimes,
+  FaBars
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -34,29 +35,29 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="h-screen bg-white border-r border-gray-200 flex-shrink-0">
+    <div className="h-screen bg-base-100 border-r border-base-300 flex-shrink-0">
       {/* Sidebar Container */}
       <div className={`flex flex-col h-full transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
         {/* Toggle Button */}
         <div className="flex justify-end p-2">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100"
+            className="btn btn-sm btn-circle btn-ghost"
           >
-            <FaTimes size={16} className="text-gray-500" />
+            {isOpen ? <FaTimes size={16} /> : <FaBars size={16} />}
           </button>
         </div>
 
         {/* Sidebar Links */}
-        <div className="flex flex-col px-4 py-2 overflow-y-auto">
+        <div className="flex flex-col px-2 py-2 overflow-y-auto">
           {menuItems.map((item, index) => (
             <Link
               key={index}
               to={item.path}
               className={`flex items-center px-2 py-3 rounded-md mb-1 transition-colors duration-200 ${
                 isActive(item.path) 
-                  ? "bg-blue-100 text-blue-600" 
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-primary/10 text-primary" 
+                  : "text-base-content hover:bg-base-200"
               }`}
             >
               <div className="flex items-center">
