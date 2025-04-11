@@ -1,15 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaClipboardList, FaCalendarAlt, FaChartBar, FaUser } from 'react-icons/fa';
+import supabase from '../supabase';
 
 const Dashboard = () => {
-  // Sample data for the dashboard
-  const recentProjects = [
-    { id: 1, name: 'Downtown Pipeline Excavation', status: 'In Progress', completion: 65 },
-    { id: 2, name: 'Westside Utility Inspection', status: 'Completed', completion: 100 },
-    { id: 3, name: 'North County Sewer Line', status: 'Planning', completion: 15 },
-  ];
+  const [recentDigs, setRecentDigs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Update date every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Format date to display day and date
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Fetch recent digs from Supabase
+  useEffect(() => {
+    const fetchRecentDigs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('digs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (error) {
+          console.error('Error fetching recent digs:', error);
+          return;
+        }
+
+        setRecentDigs(data || []);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentDigs();
+  }, []);
+
+  // Sample data for the dashboard
   const upcomingTasks = [
     { id: 1, title: 'Site Survey: Eastwood Project', due: 'Mar 21, 2025', priority: 'High' },
     { id: 2, title: 'Equipment Maintenance', due: 'Mar 25, 2025', priority: 'Medium' },
@@ -41,7 +85,7 @@ const Dashboard = () => {
         <div className="card-body flex-row justify-between items-center">
           <div>
             <h1 className="text-2xl font-semibold">Welcome, Integrity Specialists</h1>
-            <p className="text-base-content/70">Tuesday, March 18, 2025</p>
+            <p className="text-base-content/70">{formatDate(currentDate)}</p>
           </div>
           <Link to="/newdig">
             <button className="btn btn-primary">
@@ -111,47 +155,54 @@ const Dashboard = () => {
       {/* Recent Projects */}
       <div className="card bg-base-100 shadow-xl mb-6">
         <div className="border-b border-base-300 p-4">
-          <h2 className="text-lg font-medium">Recent Projects</h2>
+          <h2 className="text-lg font-medium">Recent Digs</h2>
         </div>
         <div className="card-body">
           <div className="overflow-x-auto">
-            <table className="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Project Name</th>
-                  <th>Status</th>
-                  <th>Completion</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentProjects.map((project) => (
-                  <tr key={project.id}>
-                    <td className="font-medium">{project.name}</td>
-                    <td>
-                      <span className={getStatusBadgeClass(project.status)}>
-                        {project.status}
-                      </span>
-                    </td>
-                    <td>
-                      <progress 
-                        className="progress progress-primary w-full" 
-                        value={project.completion} 
-                        max="100"
-                      ></progress>
-                      <span className="text-xs">{project.completion}%</span>
-                    </td>
-                    <td className="text-right">
-                      <Link to={`/project/${project.id}`} className="btn btn-ghost btn-xs">View</Link>
-                    </td>
+            {loading ? (
+              <div className="flex justify-center items-center p-4">
+                <span className="loading loading-spinner loading-md"></span>
+              </div>
+            ) : (
+              <table className="table table-zebra">
+                <thead>
+                  <tr>
+                    <th>Project Name</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentDigs.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="text-center py-4">No recent digs found</td>
+                    </tr>
+                  ) : (
+                    recentDigs.map((dig) => (
+                      <tr key={dig.id}>
+                        <td className="font-medium">{dig.project_name || 'Untitled Project'}</td>
+                        <td>{dig.location || 'N/A'}</td>
+                        <td>
+                          <span className={`badge ${dig.status === 'completed' ? 'badge-success' : 
+                                                   dig.status === 'in_progress' ? 'badge-info' : 
+                                                   'badge-warning'}`}>
+                            {dig.status ? dig.status.replace('_', ' ').charAt(0).toUpperCase() + dig.status.slice(1) : 'Pending'}
+                          </span>
+                        </td>
+                        <td className="text-right">
+                          <Link to={`/digs/${dig.id}`} className="btn btn-ghost btn-xs">View</Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="text-right mt-4">
             <Link to="/projects" className="link link-primary">
-              View all projects →
+              View all digs →
             </Link>
           </div>
         </div>
