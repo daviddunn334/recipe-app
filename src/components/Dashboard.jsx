@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
+import { Clock, Users, ChefHat, Star } from 'lucide-react';
 
 function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
@@ -52,10 +53,11 @@ function Dashboard() {
         .from('recipes')
         .select(`
           *,
+          ingredients (*),
           tags (*)
         `)
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(6);
 
       if (error) throw error;
       setRecentRecipes(data);
@@ -66,24 +68,18 @@ function Dashboard() {
 
   const fetchStats = async () => {
     try {
-      // Fetch all recipes
       const { data: recipes, error: recipesError } = await supabase
         .from('recipes')
         .select('*');
 
       if (recipesError) throw recipesError;
 
-      // Calculate total recipes
       const totalRecipes = recipes.length;
-
-      // Calculate total unique ingredients
       const allIngredients = recipes.reduce((acc, recipe) => {
         const ingredients = recipe.ingredients || [];
         return [...acc, ...ingredients.map(ing => ing.name)];
       }, []);
       const uniqueIngredients = new Set(allIngredients).size;
-
-      // Calculate average prep time
       const totalPrepTime = recipes.reduce((acc, recipe) => {
         return acc + (parseInt(recipe.prep_time) || 0);
       }, 0);
@@ -119,107 +115,93 @@ function Dashboard() {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+  const renderRecipeCard = (recipe) => {
+    return (
+      <div key={recipe.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+        <figure className="px-4 pt-4">
+          <img 
+            src={recipe.image_url || 'https://placehold.co/600x400?text=No+Image'} 
+            alt={recipe.name}
+            className="rounded-xl h-48 w-full object-cover"
+          />
+        </figure>
+        <div className="card-body">
+          <h2 className="card-title">{recipe.name}</h2>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Clock size={16} />
+            <span>{recipe.prep_time} min</span>
+            <Users size={16} className="ml-2" />
+            <span>{recipe.servings} servings</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <ChefHat size={16} />
+            <span>{recipe.difficulty}</span>
+          </div>
+          <div className="card-actions justify-end mt-4">
+            <Link to={`/recipes/${recipe.id}`} className="btn btn-primary btn-sm">
+              View Recipe
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Motivational Quote */}
+    <div className="space-y-8">
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-figure text-primary">
+              <ChefHat size={32} />
+            </div>
+            <div className="stat-title">Total Recipes</div>
+            <div className="stat-value">{stats.totalRecipes}</div>
+          </div>
+        </div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-figure text-secondary">
+              <Users size={32} />
+            </div>
+            <div className="stat-title">Unique Ingredients</div>
+            <div className="stat-value">{stats.totalIngredients}</div>
+          </div>
+        </div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-figure text-accent">
+              <Clock size={32} />
+            </div>
+            <div className="stat-title">Avg Prep Time</div>
+            <div className="stat-value">{stats.avgPrepTime} min</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quote Section */}
       <div className="card bg-base-200">
         <div className="card-body">
-          <div className="flex items-center gap-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <p className="text-lg italic">"{randomQuote}"</p>
-          </div>
+          <blockquote className="text-center italic">
+            "{randomQuote}"
+          </blockquote>
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="stat bg-primary text-primary-content rounded-lg">
-          <div className="stat-title text-primary-content">Total Recipes</div>
-          <div className="stat-value">{stats.totalRecipes}</div>
-          <div className="stat-desc">↑ 23% from last month</div>
-        </div>
-        <div className="stat bg-secondary text-secondary-content rounded-lg">
-          <div className="stat-title text-secondary-content">Total Ingredients</div>
-          <div className="stat-value">{stats.totalIngredients}</div>
-          <div className="stat-desc">↑ 12% from last month</div>
-        </div>
-        <div className="stat bg-accent text-accent-content rounded-lg">
-          <div className="stat-title text-accent-content">Avg Prep Time</div>
-          <div className="stat-value">{stats.avgPrepTime}m</div>
-          <div className="stat-desc">↓ 5m from last month</div>
-        </div>
-      </div>
-
-      {/* Recent Recipes */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title mb-4">Recent Recipes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recentRecipes.map(recipe => (
-              <div key={recipe.id} className="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow">
-                <figure className="relative h-48">
-                  <img 
-                    src={recipe.image_url} 
-                    alt={recipe.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                    <h3 className="text-xl font-bold text-white">{recipe.name}</h3>
-                  </div>
-                </figure>
-                <div className="card-body p-4">
-                  <div className="flex flex-wrap gap-2">
-                    {recipe.tags?.map(tag => (
-                      <span key={tag.id} className="badge badge-primary">{tag.name}</span>
-                    ))}
-                  </div>
-                  <div className="flex justify-between text-sm mt-2">
-                    <span>Prep: {recipe.prep_time}m</span>
-                    <span>Cook: {recipe.cook_time}m</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Navigation */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title mb-4">Quick Navigation</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link to="/recipes" className="card bg-primary text-primary-content shadow-xl hover:shadow-2xl transition-all transform hover:scale-105">
-              <div className="card-body items-center text-center">
-                <span className="text-4xl mb-2">📖</span>
-                <h3 className="card-title">Recipes</h3>
-                <p>Browse and manage your recipes</p>
-              </div>
-            </Link>
-            <Link to="/meal-plan" className="card bg-secondary text-secondary-content shadow-xl hover:shadow-2xl transition-all transform hover:scale-105">
-              <div className="card-body items-center text-center">
-                <span className="text-4xl mb-2">📅</span>
-                <h3 className="card-title">Meal Plan</h3>
-                <p>Plan your weekly meals</p>
-              </div>
-            </Link>
-            <Link to="/shopping-list" className="card bg-accent text-accent-content shadow-xl hover:shadow-2xl transition-all transform hover:scale-105">
-              <div className="card-body items-center text-center">
-                <span className="text-4xl mb-2">🛒</span>
-                <h3 className="card-title">Shopping List</h3>
-                <p>Manage your grocery list</p>
-              </div>
-            </Link>
-            <Link to="/profile" className="card bg-neutral text-neutral-content shadow-xl hover:shadow-2xl transition-all transform hover:scale-105">
-              <div className="card-body items-center text-center">
-                <span className="text-4xl mb-2">👤</span>
-                <h3 className="card-title">Profile</h3>
-                <p>View your profile</p>
-              </div>
-            </Link>
-          </div>
+      {/* Recent Recipes Section */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Recent Recipes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recentRecipes.map(renderRecipeCard)}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { Plus, Pencil, Trash2, Edit2, Check, X, ShoppingCart, ListPlus } from 'lucide-react'
 
 function ShoppingList() {
   const [shoppingLists, setShoppingLists] = useState([])
@@ -8,6 +9,14 @@ function ShoppingList() {
   const [loading, setLoading] = useState(true)
   const [newListName, setNewListName] = useState('')
   const [showNewListModal, setShowNewListModal] = useState(false)
+  const [showItemModal, setShowItemModal] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
+  const [newItem, setNewItem] = useState({
+    name: '',
+    price: '',
+    notes: '',
+    is_checked: false
+  })
 
   useEffect(() => {
     fetchShoppingLists()
@@ -42,13 +51,7 @@ function ShoppingList() {
     try {
       const { data, error } = await supabase
         .from('shopping_list_items')
-        .select(`
-          *,
-          ingredients (
-            name,
-            category
-          )
-        `)
+        .select('*')
         .eq('shopping_list_id', currentList.id)
         .order('created_at', { ascending: true })
 
@@ -59,7 +62,8 @@ function ShoppingList() {
     }
   }
 
-  const createNewList = async () => {
+  const createNewList = async (e) => {
+    e.preventDefault(); // Prevent form submission from reloading the page
     try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser()
@@ -196,6 +200,66 @@ function ShoppingList() {
     }
   }
 
+  const handleAddItem = async () => {
+    try {
+      if (!currentList) return
+
+      const { data, error } = await supabase
+        .from('shopping_list_items')
+        .insert([{
+          shopping_list_id: currentList.id,
+          name: newItem.name,
+          price: newItem.price ? parseFloat(newItem.price) : null,
+          notes: newItem.notes,
+          is_checked: newItem.is_checked
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+      setItems([...items, data])
+      setNewItem({ name: '', price: '', notes: '', is_checked: false })
+      setShowItemModal(false)
+    } catch (error) {
+      console.error('Error adding item:', error)
+    }
+  }
+
+  const handleUpdateItem = async () => {
+    try {
+      if (!editingItem) return
+
+      const { error } = await supabase
+        .from('shopping_list_items')
+        .update({
+          name: newItem.name,
+          price: newItem.price ? parseFloat(newItem.price) : null,
+          notes: newItem.notes,
+          is_checked: newItem.is_checked
+        })
+        .eq('id', editingItem.id)
+
+      if (error) throw error
+      fetchListItems()
+      setEditingItem(null)
+      setNewItem({ name: '', price: '', notes: '', is_checked: false })
+      setShowItemModal(false)
+    } catch (error) {
+      console.error('Error updating item:', error)
+    }
+  }
+
+  const openEditModal = (item) => {
+    setEditingItem(item)
+    setNewItem({
+      name: item.name,
+      price: item.price || '',
+      notes: item.notes || '',
+      is_checked: item.is_checked
+    })
+    setShowItemModal(true)
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -205,133 +269,261 @@ function ShoppingList() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Shopping Lists</h1>
-        <div className="flex gap-4">
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowNewListModal(true)}
-          >
-            New List
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={generateFromMealPlan}
-          >
-            Generate from Meal Plan
-          </button>
-        </div>
+        <button
+          onClick={() => setShowNewListModal(true)}
+          className="btn btn-primary"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          New List
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Shopping Lists Sidebar */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Your Lists</h2>
-          <div className="space-y-2">
-            {shoppingLists.map(list => (
-              <div 
-                key={list.id}
-                className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                  currentList?.id === list.id 
-                    ? 'bg-primary text-primary-content' 
-                    : 'bg-base-200 hover:bg-base-300'
-                }`}
-                onClick={() => setCurrentList(list)}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{list.name}</span>
-                  <button 
-                    className="btn btn-circle btn-sm btn-error"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deleteList(list.id)
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
+      {/* List of Shopping Lists */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {shoppingLists.map(list => (
+          <div
+            key={list.id}
+            className="card bg-base-100 shadow-xl cursor-pointer hover:shadow-2xl transition-shadow"
+            onClick={() => {
+              setCurrentList(list)
+              fetchListItems()
+            }}
+          >
+            <div className="card-body">
+              <div className="flex justify-between items-center">
+                <h2 className="card-title">{list.name}</h2>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteList(list.id)
+                  }}
+                  className="btn btn-ghost btn-sm"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-            ))}
+              <div className="flex items-center text-sm text-gray-500">
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                {items.length || 0} items
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Shopping List Items */}
-        <div className="md:col-span-3">
-          {currentList ? (
+      {/* Selected List Modal */}
+      {currentList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-base-100 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">{currentList.name}</h2>
+              <button
+                onClick={() => setCurrentList(null)}
+                className="btn btn-ghost"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <button
+                onClick={() => {
+                  setEditingItem(null)
+                  setNewItem({ name: '', price: '', notes: '', is_checked: false })
+                  setShowItemModal(true)
+                }}
+                className="btn btn-primary"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Item
+              </button>
+            </div>
+
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">{currentList.name}</h2>
-              <div className="space-y-2">
-                {items.map(item => (
-                  <div 
-                    key={item.id}
-                    className={`p-4 rounded-lg bg-base-200 flex items-center justify-between ${
-                      item.checked ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <input 
-                        type="checkbox"
-                        className="checkbox checkbox-primary"
-                        checked={item.checked}
-                        onChange={() => toggleItemChecked(item.id, item.checked)}
-                      />
-                      <div>
-                        <span className="font-medium">{item.ingredients.name}</span>
-                        <span className="text-sm text-base-content/70 ml-2">
-                          {item.quantity} {item.unit}
-                        </span>
-                      </div>
+              {items.map(item => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-4 bg-base-200 rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="checkbox"
+                      checked={item.is_checked}
+                      onChange={() => toggleItemChecked(item.id, item.is_checked)}
+                      className="checkbox checkbox-primary"
+                    />
+                    <div>
+                      <h3 className={`font-medium ${item.is_checked ? 'line-through text-gray-500' : ''}`}>
+                        {item.name}
+                      </h3>
+                      {item.price && (
+                        <p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+                      )}
+                      {item.notes && (
+                        <p className="text-sm text-gray-500">{item.notes}</p>
+                      )}
                     </div>
-                    <button 
-                      className="btn btn-circle btn-sm btn-error"
-                      onClick={() => deleteItem(item.id)}
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openEditModal(item)
+                      }}
+                      className="btn btn-ghost btn-sm"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteItem(item.id)
+                      }}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="text-center p-8 bg-base-200 rounded-lg">
-              <p className="text-lg">Select a shopping list or create a new one</p>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* New List Modal */}
       {showNewListModal && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Create New Shopping List</h3>
-            <input
-              type="text"
-              placeholder="List Name"
-              className="input input-bordered w-full mb-4"
-              value={newListName}
-              onChange={(e) => setNewListName(e.target.value)}
-            />
-            <div className="modal-action">
-              <button 
-                className="btn"
-                onClick={() => setShowNewListModal(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary"
-                onClick={createNewList}
-                disabled={!newListName.trim()}
-              >
-                Create
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-base-100 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4">Create New List</h2>
+            <form onSubmit={createNewList}>
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">List Name</span>
+                </label>
+                <input
+                  type="text"
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  className="input input-bordered"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewListModal(false)}
+                  className="btn"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Item Modal */}
+      {showItemModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-base-100 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4">
+              {editingItem ? 'Edit Item' : 'Add Item'}
+            </h2>
+            <form onSubmit={editingItem ? handleUpdateItem : handleAddItem}>
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Item Name</span>
+                </label>
+                <input
+                  type="text"
+                  value={editingItem ? editingItem.name : newItem.name}
+                  onChange={(e) => {
+                    if (editingItem) {
+                      setEditingItem({ ...editingItem, name: e.target.value })
+                    } else {
+                      setNewItem({ ...newItem, name: e.target.value })
+                    }
+                  }}
+                  className="input input-bordered"
+                  required
+                />
+              </div>
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Price (optional)</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingItem ? editingItem.price : newItem.price}
+                  onChange={(e) => {
+                    if (editingItem) {
+                      setEditingItem({ ...editingItem, price: e.target.value })
+                    } else {
+                      setNewItem({ ...newItem, price: e.target.value })
+                    }
+                  }}
+                  className="input input-bordered"
+                />
+              </div>
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Notes (optional)</span>
+                </label>
+                <textarea
+                  value={editingItem ? editingItem.notes : newItem.notes}
+                  onChange={(e) => {
+                    if (editingItem) {
+                      setEditingItem({ ...editingItem, notes: e.target.value })
+                    } else {
+                      setNewItem({ ...newItem, notes: e.target.value })
+                    }
+                  }}
+                  className="textarea textarea-bordered"
+                  rows="3"
+                />
+              </div>
+              <div className="form-control mb-4">
+                <label className="label cursor-pointer">
+                  <span className="label-text">Purchased</span>
+                  <input
+                    type="checkbox"
+                    checked={editingItem ? editingItem.is_checked : newItem.is_checked}
+                    onChange={(e) => {
+                      if (editingItem) {
+                        setEditingItem({ ...editingItem, is_checked: e.target.checked })
+                      } else {
+                        setNewItem({ ...newItem, is_checked: e.target.checked })
+                      }
+                    }}
+                    className="checkbox checkbox-primary"
+                  />
+                </label>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowItemModal(false)
+                    setEditingItem(null)
+                  }}
+                  className="btn"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {editingItem ? 'Update' : 'Add'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

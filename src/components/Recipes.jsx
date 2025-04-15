@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
+import { Utensils } from 'lucide-react'
 
 function Recipes() {
   const [recipes, setRecipes] = useState([])
@@ -14,6 +15,7 @@ function Recipes() {
   const [previewImage, setPreviewImage] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDifficulty, setSelectedDifficulty] = useState('All')
+  const [selectedType, setSelectedType] = useState('All')
   const fileInputRef = useRef(null)
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [showViewModal, setShowViewModal] = useState(false)
@@ -78,7 +80,7 @@ function Recipes() {
     if (recipes.length > 0) {
       filterRecipes()
     }
-  }, [searchQuery, selectedDifficulty, recipes])
+  }, [searchQuery, selectedDifficulty, selectedType, recipes])
 
   const fetchRecipes = async () => {
     try {
@@ -125,6 +127,13 @@ function Recipes() {
     if (selectedDifficulty !== 'All') {
       filtered = filtered.filter(recipe => 
         recipe.difficulty === selectedDifficulty
+      )
+    }
+
+    // Filter by type
+    if (selectedType !== 'All') {
+      filtered = filtered.filter(recipe => 
+        recipe.type === selectedType
       )
     }
 
@@ -283,7 +292,15 @@ function Recipes() {
 
   const handleDeleteRecipe = async (recipeId) => {
     try {
-      // First delete all ingredients associated with the recipe
+      // First delete all favorites associated with the recipe
+      const { error: favoritesError } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('recipe_id', recipeId)
+
+      if (favoritesError) throw favoritesError
+
+      // Then delete all ingredients associated with the recipe
       const { error: ingredientsError } = await supabase
         .from('ingredients')
         .delete()
@@ -374,11 +391,20 @@ function Recipes() {
     return (
       <div key={recipe.id} className="card bg-base-100 shadow-xl">
         <figure className="relative h-48">
-          <img 
-            src={recipe.image_url} 
-            alt={recipe.name}
-            className="w-full h-full object-cover"
-          />
+          {recipe.image_url ? (
+            <img 
+              src={recipe.image_url} 
+              alt={recipe.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-base-200 flex items-center justify-center">
+              <div className="text-center">
+                <Utensils size={64} className="mx-auto mb-2 animate-bounce" />
+                <span className="text-base-content/70">No image available</span>
+              </div>
+            </div>
+          )}
           <div className="absolute top-2 right-2 flex gap-2">
             <button 
               className={`btn btn-circle btn-sm ${isFavorited ? 'btn-error' : 'btn-ghost'}`}
@@ -936,6 +962,18 @@ function Recipes() {
               <option value="All">All Difficulties</option>
               {difficulties.map(difficulty => (
                 <option key={difficulty} value={difficulty}>{difficulty}</option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full md:w-48">
+            <select
+              className="select select-bordered w-full"
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+            >
+              <option value="All">All Types</option>
+              {recipeTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
               ))}
             </select>
           </div>
