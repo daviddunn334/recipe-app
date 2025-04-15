@@ -22,6 +22,8 @@ function Recipes() {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState(null);
 
   const [newRecipe, setNewRecipe] = useState({
     name: "",
@@ -395,6 +397,70 @@ function Recipes() {
     }
   };
 
+  const handleEditRecipe = async () => {
+    try {
+      if (!user) {
+        setError("You must be logged in to edit recipes");
+        return;
+      }
+
+      if (editingRecipe.name.trim() === "") {
+        setError("Please enter a recipe name");
+        return;
+      }
+
+      // Update recipe in database
+      const { error: recipeError } = await supabase
+        .from("recipes")
+        .update({
+          name: editingRecipe.name,
+          prep_time: editingRecipe.prepTime,
+          cook_time: editingRecipe.cookTime,
+          servings: parseInt(editingRecipe.servings),
+          difficulty: editingRecipe.difficulty,
+          mode_of_prep: editingRecipe.modeOfPrep,
+          type: editingRecipe.type,
+          instructions: editingRecipe.instructions,
+          image_url: editingRecipe.image_url,
+        })
+        .eq("id", editingRecipe.id);
+
+      if (recipeError) throw recipeError;
+
+      // Update ingredients
+      if (editingRecipe.ingredients.length > 0) {
+        // First delete existing ingredients
+        const { error: deleteError } = await supabase
+          .from("ingredients")
+          .delete()
+          .eq("recipe_id", editingRecipe.id);
+
+        if (deleteError) throw deleteError;
+
+        // Then add new ingredients
+        const ingredientsToInsert = editingRecipe.ingredients.map((ing) => ({
+          name: ing.name,
+          amount: ing.amount,
+          recipe_id: editingRecipe.id,
+        }));
+
+        const { error: ingredientsError } = await supabase
+          .from("ingredients")
+          .insert(ingredientsToInsert);
+
+        if (ingredientsError) throw ingredientsError;
+      }
+
+      // Refresh the recipes list
+      await fetchRecipes();
+      setShowEditModal(false);
+      setShowViewModal(false);
+    } catch (err) {
+      console.error("Edit recipe error:", err);
+      setError(err.message);
+    }
+  };
+
   const renderRecipeCard = (recipe) => {
     const mealTypeColors = {
       Breakfast: "bg-primary text-primary-content",
@@ -525,9 +591,9 @@ function Recipes() {
       {/* Delete Confirmation Modal */}
       {recipeToDelete && (
         <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Delete Recipe</h3>
-            <p className="py-4">
+          <div className="modal-box bg-base-100 max-w-md">
+            <h3 className="font-bold text-lg text-base-content mb-4">Delete Recipe</h3>
+            <p className="text-base-content/70 mb-6">
               Are you sure you want to delete this recipe? This action cannot be
               undone.
             </p>
@@ -549,308 +615,335 @@ function Recipes() {
         </div>
       )}
 
-      {/* Add Recipe Modal */}
-      {showAddModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-2xl">Add New Recipe</h3>
+{showAddModal && (
+  <div className="modal modal-open">
+    <div className="modal-box max-w-4xl bg-base-100 p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-2xl text-base-content">Add New Recipe</h3>
+        <button
+          className="btn btn-ghost btn-circle btn-sm hover:bg-base-200"
+          onClick={() => {
+            setShowAddModal(false);
+            resetForm();
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Image Upload Section */}
+      <div className="mb-8 bg-base-200/30 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-base-content mb-3">
+          Recipe Image (Optional)
+        </h3>
+        <div className="flex justify-center">
+          {previewImage ? (
+            <div className="relative w-48 h-48">
+              <img
+                src={previewImage}
+                alt="Recipe preview"
+                className="w-full h-full object-cover rounded-lg shadow-md"
+              />
               <button
-                className="btn btn-ghost btn-circle btn-lg text-xl hover:bg-base-200"
+                className="btn btn-circle btn-sm btn-error absolute -top-2 -right-2 shadow-sm"
                 onClick={() => {
-                  setShowAddModal(false);
-                  resetForm();
+                  setPreviewImage(null);
+                  setNewRecipe((prev) => ({ ...prev, image_url: "" }));
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
                 }}
               >
                 ×
               </button>
             </div>
-
-            {/* Image Upload Section */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-4">
-                Recipe Image (Optional)
-              </h3>
-              <div className="flex flex-col items-center gap-4">
-                {previewImage ? (
-                  <div className="relative w-64 h-64">
-                    <img
-                      src={previewImage}
-                      alt="Recipe preview"
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                    <button
-                      className="btn btn-circle btn-sm btn-error absolute -top-2 -right-2"
-                      onClick={() => {
-                        setPreviewImage(null);
-                        setNewRecipe((prev) => ({ ...prev, image_url: "" }));
-                        if (fileInputRef.current) {
-                          fileInputRef.current.value = "";
-                        }
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-base-200 transition-colors w-64 h-64 flex flex-col items-center justify-center"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                    />
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-12 w-12 mx-auto mb-2 text-base-content/50"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <p className="text-base-content/70">
-                      {uploadingImage
-                        ? "Uploading..."
-                        : "Click to upload recipe image (optional)"}
-                    </p>
-                  </div>
-                )}
-              </div>
+          ) : (
+            <div
+              className="border-2 border-dashed border-base-300 rounded-lg p-6 text-center cursor-pointer hover:bg-base-200 transition-colors w-48 h-48 flex flex-col items-center justify-center"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 mx-auto mb-2 text-base-content/50"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <p className="text-base-content/70 text-sm">
+                {uploadingImage
+                  ? "Uploading..."
+                  : "Click to upload recipe image"}
+              </p>
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Recipe Name</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter recipe name"
-                  className="input input-bordered"
-                  value={newRecipe.name}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Type</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={newRecipe.type}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, type: e.target.value })
-                  }
-                >
-                  {recipeTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Difficulty</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={newRecipe.difficulty}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, difficulty: e.target.value })
-                  }
-                >
-                  {difficulties.map((difficulty) => (
-                    <option key={difficulty} value={difficulty}>
-                      {difficulty}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Mode of Prep</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={newRecipe.modeOfPrep}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, modeOfPrep: e.target.value })
-                  }
-                >
-                  {modesOfPrep.map((mode) => (
-                    <option key={mode} value={mode}>
-                      {mode}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Prep Time</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 15 mins"
-                  className="input input-bordered"
-                  value={newRecipe.prepTime}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, prepTime: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Cook Time</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 30 mins"
-                  className="input input-bordered"
-                  value={newRecipe.cookTime}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, cookTime: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Servings</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="Number of servings"
-                  className="input input-bordered"
-                  value={newRecipe.servings}
-                  onChange={(e) =>
-                    setNewRecipe({ ...newRecipe, servings: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Ingredients Table */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-4">Ingredients</h3>
-              <div className="overflow-x-auto">
-                <table className="table w-full">
-                  <thead>
-                    <tr>
-                      <th className="bg-base-200">Ingredient</th>
-                      <th className="bg-base-200">Amount</th>
-                      <th className="bg-base-200">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {newRecipe.ingredients.map((ingredient) => (
-                      <tr key={ingredient.id}>
-                        <td>{ingredient.name}</td>
-                        <td>{ingredient.amount}</td>
-                        <td>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() =>
-                              handleRemoveIngredient(ingredient.id)
-                            }
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Add ingredient"
-                          className="input input-bordered input-sm w-full"
-                          value={newIngredient.name}
-                          onChange={(e) =>
-                            setNewIngredient({
-                              ...newIngredient,
-                              name: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Amount"
-                          className="input input-bordered input-sm w-full"
-                          value={newIngredient.amount}
-                          onChange={(e) =>
-                            setNewIngredient({
-                              ...newIngredient,
-                              amount: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={handleAddIngredient}
-                        >
-                          Add
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold mb-4">Instructions</h3>
-              <textarea
-                className="textarea textarea-bordered w-full h-48"
-                placeholder="Enter cooking instructions..."
-                value={newRecipe.instructions}
+      {/* Basic Information */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-base-content mb-4 pb-2 border-b border-base-300">
+          Recipe Details
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          {/* Left Column */}
+          <div>
+            <div className="form-control mb-3">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Recipe Name
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter recipe name"
+                className="input input-bordered bg-base-100 w-full"
+                value={newRecipe.name}
                 onChange={(e) =>
-                  setNewRecipe({ ...newRecipe, instructions: e.target.value })
+                  setNewRecipe({ ...newRecipe, name: e.target.value })
                 }
               />
             </div>
-
-            <div className="modal-action">
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetForm();
-                }}
+            <div className="form-control mb-3">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Difficulty
+                </span>
+              </label>
+              <select
+                className="select select-bordered bg-base-100 w-full"
+                value={newRecipe.difficulty}
+                onChange={(e) =>
+                  setNewRecipe({ ...newRecipe, difficulty: e.target.value })
+                }
               >
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleAddRecipe}>
-                Add Recipe
-              </button>
+                {difficulties.map((difficulty) => (
+                  <option key={difficulty} value={difficulty}>
+                    {difficulty}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-control mb-3">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Prep Time
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 15 mins"
+                className="input input-bordered bg-base-100 w-full"
+                value={newRecipe.prepTime}
+                onChange={(e) =>
+                  setNewRecipe({ ...newRecipe, prepTime: e.target.value })
+                }
+              />
+            </div>
+            <div className="form-control">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Servings
+                </span>
+              </label>
+              <input
+                type="number"
+                placeholder="Number of servings"
+                className="input input-bordered bg-base-100 w-full"
+                value={newRecipe.servings}
+                onChange={(e) =>
+                  setNewRecipe({ ...newRecipe, servings: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div>
+            <div className="form-control mb-3">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Type
+                </span>
+              </label>
+              <select
+                className="select select-bordered bg-base-100 w-full"
+                value={newRecipe.type}
+                onChange={(e) =>
+                  setNewRecipe({ ...newRecipe, type: e.target.value })
+                }
+              >
+                {recipeTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-control mb-3">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Mode of Prep
+                </span>
+              </label>
+              <select
+                className="select select-bordered bg-base-100 w-full"
+                value={newRecipe.modeOfPrep}
+                onChange={(e) =>
+                  setNewRecipe({ ...newRecipe, modeOfPrep: e.target.value })
+                }
+              >
+                {modesOfPrep.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-control mb-3">
+              <label className="label py-1">
+                <span className="label-text font-medium text-base-content">
+                  Cook Time
+                </span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 30 mins"
+                className="input input-bordered bg-base-100 w-full"
+                value={newRecipe.cookTime}
+                onChange={(e) =>
+                  setNewRecipe({ ...newRecipe, cookTime: e.target.value })
+                }
+              />
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Ingredients Table */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-base-content mb-4 pb-2 border-b border-base-300">
+          Ingredients
+        </h3>
+        <div className="overflow-x-auto bg-base-200/30 rounded-lg">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th className="bg-base-200/70 text-base-content rounded-tl-lg">Ingredient</th>
+                <th className="bg-base-200/70 text-base-content">Amount</th>
+                <th className="bg-base-200/70 text-base-content rounded-tr-lg w-20">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {newRecipe.ingredients.map((ingredient) => (
+                <tr key={ingredient.id} className="hover:bg-base-200/50">
+                  <td className="text-base-content">{ingredient.name}</td>
+                  <td className="text-base-content">{ingredient.amount}</td>
+                  <td>
+                    <button
+                      className="btn btn-ghost btn-sm text-error"
+                      onClick={() => handleRemoveIngredient(ingredient.id)}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t border-base-300">
+                <td>
+                  <input
+                    type="text"
+                    placeholder="Add ingredient"
+                    className="input input-bordered input-sm w-full bg-base-100"
+                    value={newIngredient.name}
+                    onChange={(e) =>
+                      setNewIngredient({
+                        ...newIngredient,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    placeholder="Amount"
+                    className="input input-bordered input-sm w-full bg-base-100"
+                    value={newIngredient.amount}
+                    onChange={(e) =>
+                      setNewIngredient({
+                        ...newIngredient,
+                        amount: e.target.value,
+                      })
+                    }
+                  />
+                </td>
+                <td>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleAddIngredient}
+                  >
+                    Add
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-base-content mb-4 pb-2 border-b border-base-300">
+          Instructions
+        </h3>
+        <textarea
+          className="textarea textarea-bordered w-full h-48 bg-base-100"
+          placeholder="Enter cooking instructions..."
+          value={newRecipe.instructions}
+          onChange={(e) =>
+            setNewRecipe({ ...newRecipe, instructions: e.target.value })
+          }
+        />
+      </div>
+
+      <div className="modal-action pt-2 border-t border-base-300">
+        <button
+          className="btn btn-ghost"
+          onClick={() => {
+            setShowAddModal(false);
+            resetForm();
+          }}
+        >
+          Cancel
+        </button>
+        <button className="btn btn-primary" onClick={handleAddRecipe}>
+          Add Recipe
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* View Recipe Modal */}
       {showViewModal && selectedRecipe && (
         <div className="modal modal-open">
-          <div className="modal-box max-w-4xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-2xl">{selectedRecipe.name}</h3>
+          <div className="modal-box max-w-4xl bg-base-100">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="font-bold text-2xl text-base-content">{selectedRecipe.name}</h3>
               <div className="flex gap-2">
                 <button
                   className="btn btn-primary btn-sm"
@@ -872,8 +965,45 @@ function Recipes() {
                   </svg>
                   Print Recipe
                 </button>
+                {user?.id === selectedRecipe.user_id && (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      setEditingRecipe({
+                        id: selectedRecipe.id,
+                        name: selectedRecipe.name,
+                        prepTime: selectedRecipe.prep_time,
+                        cookTime: selectedRecipe.cook_time,
+                        servings: selectedRecipe.servings,
+                        difficulty: selectedRecipe.difficulty,
+                        modeOfPrep: selectedRecipe.mode_of_prep,
+                        type: selectedRecipe.type,
+                        instructions: selectedRecipe.instructions,
+                        image_url: selectedRecipe.image_url,
+                        ingredients: selectedRecipe.ingredients || [],
+                      });
+                      setShowEditModal(true);
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    Edit Recipe
+                  </button>
+                )}
                 <button
-                  className="btn btn-ghost btn-circle btn-lg text-xl hover:bg-base-200"
+                  className="btn btn-ghost btn-circle btn-sm hover:bg-base-200"
                   onClick={() => setShowViewModal(false)}
                 >
                   ×
@@ -881,62 +1011,39 @@ function Recipes() {
               </div>
             </div>
 
-            {/* Print-specific styling */}
-            <style>
-              {`
-                @media print {
-                  body * {
-                    visibility: hidden;
-                  }
-                  .print-content, .print-content * {
-                    visibility: visible;
-                  }
-                  .print-content {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                  }
-                  .no-print {
-                    display: none;
-                  }
-                }
-              `}
-            </style>
-
             <div className="print-content">
               {/* Recipe Image */}
               <div className="mb-8">
                 <img
                   src={selectedRecipe.image_url}
                   alt={selectedRecipe.name}
-                  className="w-full h-96 object-cover rounded-lg"
+                  className="w-full h-64 object-cover rounded-lg"
                 />
               </div>
 
               {/* Recipe Info Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title">Prep Time</div>
-                  <div className="stat-value text-lg">
+                <div className="bg-base-200 rounded-lg p-4">
+                  <div className="text-sm text-base-content/70 mb-1">Prep Time</div>
+                  <div className="text-lg font-semibold text-base-content">
                     {selectedRecipe.prep_time}
                   </div>
                 </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title">Cook Time</div>
-                  <div className="stat-value text-lg">
+                <div className="bg-base-200 rounded-lg p-4">
+                  <div className="text-sm text-base-content/70 mb-1">Cook Time</div>
+                  <div className="text-lg font-semibold text-base-content">
                     {selectedRecipe.cook_time}
                   </div>
                 </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title">Servings</div>
-                  <div className="stat-value text-lg">
+                <div className="bg-base-200 rounded-lg p-4">
+                  <div className="text-sm text-base-content/70 mb-1">Servings</div>
+                  <div className="text-lg font-semibold text-base-content">
                     {selectedRecipe.servings}
                   </div>
                 </div>
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title">Difficulty</div>
-                  <div className="stat-value text-lg">
+                <div className="bg-base-200 rounded-lg p-4">
+                  <div className="text-sm text-base-content/70 mb-1">Difficulty</div>
+                  <div className="text-lg font-semibold text-base-content">
                     {selectedRecipe.difficulty}
                   </div>
                 </div>
@@ -944,25 +1051,25 @@ function Recipes() {
 
               {/* Mode of Prep and Type */}
               <div className="mb-8 flex gap-4">
-                <div className="badge badge-lg badge-primary p-4 text-lg">
+                <div className="badge badge-lg badge-primary p-4">
                   {selectedRecipe.mode_of_prep}
                 </div>
-                <div className="badge badge-lg badge-secondary p-4 text-lg">
+                <div className="badge badge-lg badge-secondary p-4">
                   {selectedRecipe.type}
                 </div>
               </div>
 
               {/* Ingredients */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold mb-4">Ingredients</h3>
+                <h3 className="text-xl font-bold text-base-content mb-4">Ingredients</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedRecipe.ingredients?.map((ingredient, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 p-3 bg-base-200 rounded-lg"
+                      className="flex items-center gap-2 p-4 bg-base-200 rounded-lg"
                     >
-                      <span className="flex-1">{ingredient.name}</span>
-                      <span className="font-semibold">{ingredient.amount}</span>
+                      <span className="flex-1 text-base-content">{ingredient.name}</span>
+                      <span className="font-semibold text-base-content">{ingredient.amount}</span>
                     </div>
                   ))}
                 </div>
@@ -970,7 +1077,7 @@ function Recipes() {
 
               {/* Instructions */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold mb-4">Instructions</h3>
+                <h3 className="text-xl font-bold text-base-content mb-4">Instructions</h3>
                 <div className="space-y-4">
                   {selectedRecipe.instructions.split("\n").map(
                     (step, index) =>
@@ -979,7 +1086,7 @@ function Recipes() {
                           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold">
                             {index + 1}
                           </div>
-                          <div className="flex-1 bg-base-200 p-4 rounded-lg">
+                          <div className="flex-1 bg-base-200 p-4 rounded-lg text-base-content">
                             {step}
                           </div>
                         </div>
@@ -997,17 +1104,332 @@ function Recipes() {
               >
                 Close
               </button>
-              {user?.id === selectedRecipe.user_id && (
-                <button
-                  className="btn btn-error"
-                  onClick={() => {
-                    setShowViewModal(false);
-                    setRecipeToDelete(selectedRecipe.id);
-                  }}
-                >
-                  Delete Recipe
-                </button>
-              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Recipe Modal */}
+      {showEditModal && editingRecipe && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-4xl bg-base-100">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="font-bold text-2xl text-base-content">Edit Recipe</h3>
+              <button
+                className="btn btn-ghost btn-circle btn-sm hover:bg-base-200"
+                onClick={() => setShowEditModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-base-content mb-4">
+                Recipe Image
+              </h3>
+              <div className="flex flex-col items-center gap-4">
+                {editingRecipe.image_url ? (
+                  <div className="relative w-48 h-48">
+                    <img
+                      src={editingRecipe.image_url}
+                      alt="Recipe preview"
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <button
+                      className="btn btn-circle btn-sm btn-error absolute -top-2 -right-2"
+                      onClick={() => {
+                        setEditingRecipe((prev) => ({ ...prev, image_url: "" }));
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="border-2 border-dashed border-base-200 rounded-lg p-6 text-center cursor-pointer hover:bg-base-200 transition-colors w-48 h-48 flex flex-col items-center justify-center"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8 mx-auto mb-2 text-base-content/50"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <p className="text-base-content/70 text-sm">
+                      {uploadingImage
+                        ? "Uploading..."
+                        : "Click to upload recipe image"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Recipe Name
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter recipe name"
+                    className="input input-bordered bg-base-100"
+                    value={editingRecipe.name}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Difficulty
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered bg-base-100"
+                    value={editingRecipe.difficulty}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, difficulty: e.target.value })
+                    }
+                  >
+                    {difficulties.map((difficulty) => (
+                      <option key={difficulty} value={difficulty}>
+                        {difficulty}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Prep Time
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 15 mins"
+                    className="input input-bordered bg-base-100"
+                    value={editingRecipe.prepTime}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, prepTime: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Servings
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Number of servings"
+                    className="input input-bordered bg-base-100"
+                    value={editingRecipe.servings}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, servings: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Type
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered bg-base-100"
+                    value={editingRecipe.type}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, type: e.target.value })
+                    }
+                  >
+                    {recipeTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Mode of Prep
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered bg-base-100"
+                    value={editingRecipe.modeOfPrep}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, modeOfPrep: e.target.value })
+                    }
+                  >
+                    {modesOfPrep.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {mode}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold text-base-content">
+                      Cook Time
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 30 mins"
+                    className="input input-bordered bg-base-100"
+                    value={editingRecipe.cookTime}
+                    onChange={(e) =>
+                      setEditingRecipe({ ...editingRecipe, cookTime: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Ingredients Table */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-base-content mb-4">
+                Ingredients
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="table w-full">
+                  <thead>
+                    <tr>
+                      <th className="bg-base-200 text-base-content">Ingredient</th>
+                      <th className="bg-base-200 text-base-content">Amount</th>
+                      <th className="bg-base-200 text-base-content">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {editingRecipe.ingredients.map((ingredient) => (
+                      <tr key={ingredient.id}>
+                        <td className="text-base-content">{ingredient.name}</td>
+                        <td className="text-base-content">{ingredient.amount}</td>
+                        <td>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                              setEditingRecipe((prev) => ({
+                                ...prev,
+                                ingredients: prev.ingredients.filter(
+                                  (ing) => ing.id !== ingredient.id
+                                ),
+                              }));
+                            }}
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Add ingredient"
+                          className="input input-bordered input-sm w-full bg-base-100"
+                          value={newIngredient.name}
+                          onChange={(e) =>
+                            setNewIngredient({
+                              ...newIngredient,
+                              name: e.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Amount"
+                          className="input input-bordered input-sm w-full bg-base-100"
+                          value={newIngredient.amount}
+                          onChange={(e) =>
+                            setNewIngredient({
+                              ...newIngredient,
+                              amount: e.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => {
+                            if (newIngredient.name.trim() === "") return;
+                            setEditingRecipe((prev) => ({
+                              ...prev,
+                              ingredients: [
+                                ...prev.ingredients,
+                                { ...newIngredient, id: Date.now() },
+                              ],
+                            }));
+                            setNewIngredient({ name: "", amount: "" });
+                          }}
+                        >
+                          Add
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-base-content mb-4">
+                Instructions
+              </h3>
+              <textarea
+                className="textarea textarea-bordered w-full h-48 bg-base-100"
+                placeholder="Enter cooking instructions..."
+                value={editingRecipe.instructions}
+                onChange={(e) =>
+                  setEditingRecipe({ ...editingRecipe, instructions: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={handleEditRecipe}>
+                Save Changes
+              </button>
             </div>
           </div>
         </div>

@@ -14,7 +14,6 @@ function AIRecipeSuggestions() {
     setSuggestions([]);
 
     try {
-      console.log("Sending request with prompt:", prompt);
       const response = await fetch("/api/ai-suggestions", {
         method: "POST",
         headers: {
@@ -23,19 +22,11 @@ function AIRecipeSuggestions() {
         body: JSON.stringify({ prompt }),
       });
 
-      console.log("Response status:", response.status);
-      console.log(
-        "Response headers:",
-        Object.fromEntries(response.headers.entries())
-      );
-
       let data;
       try {
         const text = await response.text();
-        console.log("Response text:", text);
         data = JSON.parse(text);
       } catch (jsonError) {
-        console.error("JSON parse error:", jsonError);
         throw new Error("Invalid response from server");
       }
 
@@ -49,7 +40,6 @@ function AIRecipeSuggestions() {
 
       setSuggestions(data.suggestions);
     } catch (err) {
-      console.error("Error in handleSubmit:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -57,27 +47,29 @@ function AIRecipeSuggestions() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-      <div className="flex items-center mb-4">
-        <Sparkles className="w-6 h-6 text-yellow-500 mr-2" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+    <div className="bg-base-100 rounded-lg shadow-md border border-base-200 p-4">
+      <div className="flex items-center mb-3">
+        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-emerald-100 text-emerald-600 mr-2">
+          <Sparkles size={16} />
+        </div>
+        <h2 className="text-xl font-semibold text-base-content">
           AI Recipe Suggestions
         </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-6">
-        <div className="flex flex-col space-y-4">
+      <form onSubmit={handleSubmit} className="mb-4">
+        <div className="flex flex-col space-y-2">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Tell me what ingredients you have or what you're craving..."
-            className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            rows={4}
+            className="w-full p-3 border border-base-200 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-base-100 text-base-content"
+            rows={2}
           />
           <button
             type="submit"
             disabled={loading || !prompt.trim()}
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm"
           >
             {loading ? "Generating..." : "Get Suggestions"}
           </button>
@@ -85,32 +77,31 @@ function AIRecipeSuggestions() {
       </form>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-lg mb-4">
-          <p className="font-medium">Error:</p>
+        <div className="bg-error/10 text-error p-3 rounded-lg mb-3 text-sm">
           <p>{error}</p>
         </div>
       )}
 
       {suggestions.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {suggestions.map((recipe, index) => (
             <div
               key={index}
-              className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6"
+              className="bg-base-200 rounded-lg p-3"
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg font-semibold text-base-content mb-1">
                 {recipe.name}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              <p className="text-base-content/70 text-sm mb-2">
                 {recipe.description}
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  <h4 className="font-medium text-base-content text-sm mb-1">
                     Ingredients:
                   </h4>
-                  <ul className="list-disc list-inside text-gray-600 dark:text-gray-300">
+                  <ul className="list-disc list-inside text-base-content/70 text-sm">
                     {recipe.ingredients.map((ingredient, i) => (
                       <li key={i}>{ingredient}</li>
                     ))}
@@ -118,10 +109,10 @@ function AIRecipeSuggestions() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  <h4 className="font-medium text-base-content text-sm mb-1">
                     Instructions:
                   </h4>
-                  <ol className="list-decimal list-inside text-gray-600 dark:text-gray-300">
+                  <ol className="list-decimal list-inside text-base-content/70 text-sm">
                     {recipe.instructions.map((instruction, i) => (
                       <li key={i}>{instruction}</li>
                     ))}
