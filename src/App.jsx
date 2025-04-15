@@ -1,143 +1,110 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import { useAuth } from "./context/AuthContext";
-import { initializeCompanies } from "./utils/initializeCompanies";
-import { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { supabase } from './supabaseClient'
+import { AuthProvider } from './context/AuthContext'
+import Auth from './components/Auth'
+import Sidebar from './components/Sidebar'
+import Dashboard from './components/Dashboard'
+import Recipes from './components/Recipes'
+import MealPlan from './components/MealPlan'
+import ShoppingList from './components/ShoppingList'
+import Profile from './components/Profile'
+import Settings from './components/Settings'
+import Favorites from './components/Favorites'
+import { ThemeProvider } from './components/ThemeProvider'
 
-import Sidebar from "./components/Sidebar";
-import TopNav from "./components/TopNav";
-import Footer from "./components/Footer";
-import Login from "./components/Login";
-import SignUp from "./components/Signup";
-import ProtectedRoute from "./components/ProtectedRoute";
-
-import Dashboard from "./components/Dashboard";
-import Profile from "./components/Profile";
-import ProjectsAndDigs from "./components/ProjectsAndDigs";
-import Reporting from "./components/Reporting";
-import Calculations from "./components/Calculations";
-import Inventory from "./components/Inventory";
-import TimeSheets from "./components/TimeSheets";
-import NewDig from "./components/NewDig";
-import CompanyDirectory from "./components/CompanyDirectory";
-import DigDetails from "./components/DigDetails";
-import EditDig from "./components/EditDig";
-import CompanyDetails from "./components/CompanyDetails";
-
-// Calculators
-import AbsEsCalculator from "./components/AbsEsCalculator";
-import TimeClockCalculator from "./components/TimeClockCalculator";
-import PitDepthCalculator from "./components/PitDepthCalculator";
-
-function AppContent() {
-  const { user } = useAuth();
+function Layout({ children }) {
+  const [isOpen, setIsOpen] = useState(true)
+  const [theme, setTheme] = useState('light')
 
   useEffect(() => {
-    // Initialize companies data
-    initializeCompanies().catch(console.error);
-  }, []);
+    const savedTheme = localStorage.getItem('theme') || 'light'
+    setTheme(savedTheme)
+    document.documentElement.setAttribute('data-theme', savedTheme)
+  }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    document.documentElement.setAttribute('data-theme', newTheme)
+    localStorage.setItem('theme', newTheme)
+  }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {user && <TopNav />}
-      <div className="flex flex-1">
-        {user && <Sidebar />}
-        <main className="flex-1 p-4">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<SignUp />} />
-            
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } />
-            <Route path="/projectsanddigs" element={
-              <ProtectedRoute>
-                <ProjectsAndDigs />
-              </ProtectedRoute>
-            } />
-            <Route path="/reporting" element={
-              <ProtectedRoute>
-                <Reporting />
-              </ProtectedRoute>
-            } />
-            <Route path="/calculations" element={
-              <ProtectedRoute>
-                <Calculations />
-              </ProtectedRoute>
-            } />
-            <Route path="/newdig" element={
-              <ProtectedRoute>
-                <NewDig />
-              </ProtectedRoute>
-            } />
-            <Route path="/companydirectory" element={
-              <ProtectedRoute>
-                <CompanyDirectory />
-              </ProtectedRoute>
-            } />
-            <Route path="/reporting/dig/:id" element={
-              <ProtectedRoute>
-                <DigDetails />
-              </ProtectedRoute>
-            } />
-            <Route path="/reporting/edit/:id" element={
-              <ProtectedRoute>
-                <EditDig />
-              </ProtectedRoute>
-            } />
-            <Route path="/calculations/abs-es" element={
-              <ProtectedRoute>
-                <AbsEsCalculator />
-              </ProtectedRoute>
-            } />
-            <Route path="/calculations/timeclockcalculator" element={
-              <ProtectedRoute>
-                <TimeClockCalculator />
-              </ProtectedRoute>
-            } />
-            <Route path="/calculations/pitdepthcalculator" element={
-              <ProtectedRoute>
-                <PitDepthCalculator />
-              </ProtectedRoute>
-            } />
-            <Route path="/inventory" element={
-              <ProtectedRoute>
-                <Inventory />
-              </ProtectedRoute>
-            } />
-            <Route path="/timesheets" element={
-              <ProtectedRoute>
-                <TimeSheets />
-              </ProtectedRoute>
-            } />
-            <Route path="/company/:companyId" element={
-              <ProtectedRoute>
-                <CompanyDetails />
-              </ProtectedRoute>
-            } />
-          </Routes>
+    <div className="min-h-screen bg-base-100">
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      
+      <div className={`transition-all duration-300 ${isOpen ? 'ml-64' : 'ml-20'}`}>
+        <div className="navbar bg-base-100 shadow-sm border-b border-base-200">
+          <div className="flex-1">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+          </div>
+          <div className="flex-none">
+            <label className="swap swap-rotate mr-4">
+              <input 
+                type="checkbox" 
+                checked={theme === 'dark'}
+                onChange={toggleTheme}
+              />
+              <svg className="swap-on h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"/>
+              </svg>
+              <svg className="swap-off h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/>
+              </svg>
+            </label>
+          </div>
+        </div>
+        
+        <main className="p-6">
+          {children}
         </main>
       </div>
-      {user && <Footer />}
     </div>
-  );
+  )
 }
 
 function App() {
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    )
+  }
+
   return (
-    <Router>
+    <ThemeProvider>
       <AuthProvider>
-        <AppContent />
+        <Router>
+          <Routes>
+            <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+            <Route path="/" element={session ? <Layout><Dashboard /></Layout> : <Navigate to="/auth" />} />
+            <Route path="/recipes" element={session ? <Layout><Recipes /></Layout> : <Navigate to="/auth" />} />
+            <Route path="/meal-plan" element={session ? <Layout><MealPlan /></Layout> : <Navigate to="/auth" />} />
+            <Route path="/shopping-list" element={session ? <Layout><ShoppingList /></Layout> : <Navigate to="/auth" />} />
+            <Route path="/profile" element={session ? <Layout><Profile /></Layout> : <Navigate to="/auth" />} />
+            <Route path="/settings" element={session ? <Layout><Settings /></Layout> : <Navigate to="/auth" />} />
+            <Route path="/favorites" element={session ? <Layout><Favorites /></Layout> : <Navigate to="/auth" />} />
+          </Routes>
+        </Router>
       </AuthProvider>
-    </Router>
-  );
+    </ThemeProvider>
+  )
 }
 
-export default App;
+export default App
